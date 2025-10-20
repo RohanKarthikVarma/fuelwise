@@ -49,11 +49,13 @@ const dailySchema = z.object({
   efficiency: z.coerce.number().min(0.1, 'Efficiency must be > 0'),
   state: z.string().min(1, 'Please select a state'),
   fuelPrice: z.coerce.number().min(1, 'Fuel price must be > 0'),
+  people: z.coerce.number().int().min(1, 'At least 1 person').optional().default(1),
 });
 
 const monthlySchema = z.object({
   dailyCost: z.coerce.number().min(0.1, 'Daily cost must be > 0'),
   commuteDays: z.coerce.number().int().min(1).max(31, 'Days must be between 1-31'),
+  people: z.coerce.number().int().min(1, 'At least 1 person').optional().default(1),
 });
 
 
@@ -103,12 +105,12 @@ export function FuelCalculator() {
 
   const dailyForm = useForm<DailyFormValues>({
     resolver: zodResolver(dailySchema),
-    defaultValues: { distance: undefined, efficiency: undefined, state: '', fuelPrice: undefined },
+    defaultValues: { distance: undefined, efficiency: undefined, state: '', fuelPrice: undefined, people: 1 },
   });
 
   const monthlyForm = useForm<MonthlyFormValues>({
     resolver: zodResolver(monthlySchema),
-    defaultValues: { dailyCost: undefined, commuteDays: 22 },
+    defaultValues: { dailyCost: undefined, commuteDays: 22, people: 1 },
   });
 
   const useAutoFuelPrice = (form: typeof tripForm | typeof dailyForm) => {
@@ -148,26 +150,43 @@ export function FuelCalculator() {
       });
 
     } else if (activeTab === 'daily') {
-      const { distance, efficiency, fuelPrice } = values as DailyFormValues;
+      const { distance, efficiency, fuelPrice, people } = values as DailyFormValues;
       const totalFuel = distance / efficiency;
       const totalCost = totalFuel * fuelPrice;
+      const costPerPerson = totalCost / people;
+
+      const resultItems = [
+        { label: 'Fuel per Day', value: `${totalFuel.toFixed(2)} liters` },
+        { label: 'Estimated Daily Cost', value: `₹${totalCost.toFixed(2)}` },
+      ];
+
+      if (people > 1) {
+        resultItems.push({ label: 'Cost per Person', value: `₹${costPerPerson.toFixed(2)}` });
+      }
+
       setResult({
         title: 'Daily Commute Estimate',
-        items: [
-          { label: 'Fuel per Day', value: `${totalFuel.toFixed(2)} liters` },
-          { label: 'Estimated Daily Cost', value: `₹${totalCost.toFixed(2)}` },
-        ],
+        items: resultItems
       });
       monthlyForm.setValue('dailyCost', parseFloat(totalCost.toFixed(2)));
+
     } else if (activeTab === 'monthly') {
-        const { dailyCost, commuteDays } = values as MonthlyFormValues;
+        const { dailyCost, commuteDays, people } = values as MonthlyFormValues;
         const totalCost = dailyCost * commuteDays;
+        const costPerPerson = totalCost / people;
+
+        const resultItems = [
+          { label: 'Estimated Monthly Cost', value: `₹${totalCost.toFixed(2)}` },
+          { label: 'Based on', value: `${commuteDays} commute days` },
+        ];
+
+        if (people > 1) {
+          resultItems.push({ label: 'Cost per Person', value: `₹${costPerPerson.toFixed(2)}` });
+        }
+
         setResult({
             title: 'Monthly Expense Estimate',
-            items: [
-                { label: 'Estimated Monthly Cost', value: `₹${totalCost.toFixed(2)}` },
-                { label: 'Based on', value: `${commuteDays} commute days` },
-            ],
+            items: resultItems,
         });
     }
   };
@@ -213,6 +232,7 @@ export function FuelCalculator() {
                       <FormField control={dailyForm.control} name="distance" render={({ field }) => <FormItem><FormLabel>Daily Round Trip (km)</FormLabel><FormControl><Input type="number" placeholder="e.g., 50" {...field} /></FormControl><FormMessage /></FormItem>} />
                       <FormField control={dailyForm.control} name="efficiency" render={({ field }) => <FormItem><FormLabel>Vehicle's Fuel Efficiency (km/l)</FormLabel><FormControl><Input type="number" placeholder="e.g., 18" {...field} /></FormControl><FormMessage /></FormItem>} />
                       <LocationFields form={dailyForm} />
+                      <FormField control={dailyForm.control} name="people" render={({ field }) => <FormItem><FormLabel>Split Among (people)</FormLabel><FormControl><Input type="number" min="1" step="1" placeholder="e.g., 2" {...field} /></FormControl><FormMessage /></FormItem>} />
                   </CardContent>
                   <CalculationFooter isSubmitting={isSubmitting} result={result} buttonText="Calculate Daily Cost" />
               </CalculatorCard>
@@ -227,6 +247,7 @@ export function FuelCalculator() {
                         <CardContent className="space-y-4">
                              <FormField control={monthlyForm.control} name="dailyCost" render={({ field }) => <FormItem><FormLabel>Cost per Day (₹)</FormLabel><FormControl><Input type="number" step="0.01" placeholder="Calculated from 'Daily'" {...field} /></FormControl><FormMessage /></FormItem>} />
                              <FormField control={monthlyForm.control} name="commuteDays" render={({ field }) => <FormItem><FormLabel>Commute Days per Month</FormLabel><FormControl><Input type="number" placeholder="e.g., 22" {...field} /></FormControl><FormMessage /></FormItem>} />
+                             <FormField control={monthlyForm.control} name="people" render={({ field }) => <FormItem><FormLabel>Split Among (people)</FormLabel><FormControl><Input type="number" min="1" step="1" placeholder="e.g., 2" {...field} /></FormControl><FormMessage /></FormItem>} />
                         </CardContent>
                         <CalculationFooter isSubmitting={isSubmitting} result={result} buttonText="Calculate Monthly Cost" />
                     </CalculatorCard>
