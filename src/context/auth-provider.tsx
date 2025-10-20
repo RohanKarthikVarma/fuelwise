@@ -35,17 +35,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-        <div className="mx-auto grid w-full max-w-lg gap-12">
-            <div className='space-y-4'>
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-8 w-2/3" />
-                <Skeleton className="h-32 w-full" />
-                <Skeleton className="h-10 w-1/2" />
+        <div className="flex min-h-screen w-full flex-col bg-background">
+          <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-14 max-w-screen-2xl items-center">
+              <div className="mr-4 hidden md:flex">
+                  <Skeleton className="h-6 w-32" />
+              </div>
+              <div className="flex flex-1 items-center justify-end">
+                  <Skeleton className="h-8 w-8" />
+              </div>
             </div>
-             <div className='space-y-4'>
-                <Skeleton className="h-10 w-1/3" />
-                <Skeleton className="h-32 w-full" />
+          </header>
+          <main className="flex-1">
+            <div className="container relative py-8 md:py-12">
+                <div className="mx-auto grid w-full max-w-3xl justify-center gap-12">
+                  <div className="flex flex-col items-center gap-4 text-center">
+                      <Skeleton className="h-12 w-80" />
+                      <Skeleton className="h-6 w-full max-w-[700px]" />
+                  </div>
+                  <Skeleton className="h-96 w-full" />
+                </div>
             </div>
+          </main>
         </div>
     );
   }

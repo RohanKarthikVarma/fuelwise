@@ -59,10 +59,14 @@ export function TripHistory() {
         });
         setTrips(tripsData);
         setLoading(false);
+      }, (error) => {
+        console.error("Error fetching trip history: ", error);
+        setLoading(false);
       });
 
       return () => unsubscribe();
     } else if (!authLoading) {
+      setTrips([]);
       setLoading(false);
     }
   }, [user, authLoading]);
@@ -91,11 +95,22 @@ export function TripHistory() {
     });
   };
 
+  if (!user && !authLoading) {
+    return (
+        <div className="w-full space-y-4">
+            <h2 className="text-2xl font-bold tracking-tight">Trip History</h2>
+            <div className="rounded-lg border p-8 text-center text-muted-foreground">
+                <p>Please sign in to view your trip history.</p>
+            </div>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Trip History</h2>
-        {trips.length > 0 && (
+        {user && trips.length > 0 && (
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm">
@@ -153,10 +168,16 @@ export function TripHistory() {
           </Table>
         ) : (
           <div className="p-8 text-center text-muted-foreground">
-            <p>No trips recorded yet.</p>
-            <p className="text-sm">
-              Use the calculator above to plan and save your first trip!
-            </p>
+            { user ? (
+              <>
+                <p>No trips recorded yet.</p>
+                <p className="text-sm">
+                  Use the calculator above to plan and save your first trip!
+                </p>
+              </>
+             ) : (
+              <p>Sign in to save and view trips.</p>
+             )}
           </div>
         )}
       </div>
