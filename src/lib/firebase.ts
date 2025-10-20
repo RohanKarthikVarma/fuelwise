@@ -2,10 +2,9 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
-import * as dotenv from 'dotenv';
 
-dotenv.config();
-
+// The following configuration is used to connect to the Firebase project.
+// It is recommended to use environment variables to store this information.
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
