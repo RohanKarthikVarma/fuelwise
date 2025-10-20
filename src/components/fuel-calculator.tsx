@@ -34,9 +34,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { indianStates, mockFuelPrices } from '@/lib/data';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/context/auth-provider';
-import { addTrip, type Trip } from '@/app/actions';
-import { useToast } from '@/hooks/use-toast';
 
 // Schemas
 const tripSchema = z.object({
@@ -68,34 +65,10 @@ type MonthlyFormValues = z.infer<typeof monthlySchema>;
 type CalculationResult = {
   title: string;
   items: { label: string; value: string }[];
-  tripData?: Omit<Trip, 'id' | 'createdAt'>;
 };
 
 const ResultDisplay = ({ result }: { result: CalculationResult | null }) => {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [isSaving, setIsSaving] = React.useState(false);
-
   if (!result) return null;
-
-  const handleSaveTrip = async () => {
-    if (!result.tripData || !user) return;
-    setIsSaving(true);
-    const response = await addTrip(result.tripData);
-    if (response.success) {
-      toast({
-        title: 'Trip Saved!',
-        description: 'Your trip has been added to your history.',
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: response.error || 'Could not save trip.',
-      });
-    }
-    setIsSaving(false);
-  };
 
   return (
     <motion.div
@@ -104,16 +77,7 @@ const ResultDisplay = ({ result }: { result: CalculationResult | null }) => {
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="w-full rounded-lg border bg-muted/50 p-4"
     >
-      <div className='flex justify-between items-start'>
-        <h3 className="text-lg font-semibold text-primary">{result.title}</h3>
-        {user && result.tripData && (
-          <Button onClick={handleSaveTrip} size="sm" disabled={isSaving}>
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-            Save Trip
-          </Button>
-        )}
-      </div>
-
+      <h3 className="text-lg font-semibold text-primary">{result.title}</h3>
       <div className="mt-2 divide-y divide-border">
         {result.items.map((item, index) => (
           <div key={index} className="flex justify-between py-2">
@@ -128,7 +92,6 @@ const ResultDisplay = ({ result }: { result: CalculationResult | null }) => {
 
 
 export function FuelCalculator() {
-  const { user } = useAuth();
   const [activeTab, setActiveTab] = React.useState('trip');
   const [result, setResult] = React.useState<CalculationResult | null>(null);
   
@@ -162,33 +125,28 @@ export function FuelCalculator() {
 
   const onSubmit = async (values: any) => {
     await new Promise(resolve => setTimeout(resolve, 300));
-    if (!user) return;
 
     if (activeTab === 'trip') {
-      const { distance, efficiency, fuelPrice, state } = values as TripFormValues;
+      const { distance, efficiency, fuelPrice } = values as TripFormValues;
       const totalFuel = distance / efficiency;
       const totalCost = totalFuel * fuelPrice;
-      const tripData: Omit<Trip, 'id' | 'createdAt'> = { userId: user.uid, distance, efficiency, state, fuelPrice, totalCost };
       setResult({
         title: 'Single Trip Estimate',
         items: [
           { label: 'Total Fuel Needed', value: `${totalFuel.toFixed(2)} liters` },
           { label: 'Estimated Trip Cost', value: `₹${totalCost.toFixed(2)}` },
         ],
-        tripData
       });
     } else if (activeTab === 'daily') {
-      const { distance, efficiency, fuelPrice, state } = values as DailyFormValues;
+      const { distance, efficiency, fuelPrice } = values as DailyFormValues;
       const totalFuel = distance / efficiency;
       const totalCost = totalFuel * fuelPrice;
-      const tripData: Omit<Trip, 'id' | 'createdAt'> = { userId: user.uid, distance, efficiency, state, fuelPrice, totalCost };
       setResult({
         title: 'Daily Commute Estimate',
         items: [
           { label: 'Fuel per Day', value: `${totalFuel.toFixed(2)} liters` },
           { label: 'Estimated Daily Cost', value: `₹${totalCost.toFixed(2)}` },
         ],
-        tripData
       });
       monthlyForm.setValue('dailyCost', parseFloat(totalCost.toFixed(2)));
     } else if (activeTab === 'monthly') {
