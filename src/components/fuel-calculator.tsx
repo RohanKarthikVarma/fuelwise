@@ -30,10 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { indianStates, mockFuelPrices } from '@/lib/data';
-import { useAuth } from '@/context/auth-provider';
-import { addTrip } from '@/app/actions';
 import { Loader2 } from 'lucide-react';
 
 const tripSchema = z.object({
@@ -51,8 +48,6 @@ type CalculationResult = {
 };
 
 export function FuelCalculator() {
-  const { user } = useAuth();
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [result, setResult] = React.useState<CalculationResult | null>(null);
 
@@ -76,46 +71,16 @@ export function FuelCalculator() {
   }, [selectedState, form]);
 
   async function onSubmit(values: TripFormValues) {
-    if (!user) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'You must be signed in to save a trip.',
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     setResult(null);
+
+    // Simulate a short delay for calculation
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const totalFuel = values.distance / values.efficiency;
     const totalCost = totalFuel * values.fuelPrice;
 
     setResult({ totalFuel, totalCost });
-
-    const tripData = {
-      userId: user.uid,
-      distance: values.distance,
-      efficiency: values.efficiency,
-      state: values.state,
-      fuelPrice: values.fuelPrice,
-      totalCost: totalCost,
-    };
-
-    const response = await addTrip(tripData);
-
-    if (response.success) {
-      toast({
-        title: 'Success!',
-        description: response.message,
-      });
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Oh no!',
-        description: response.error,
-      });
-    }
     setIsSubmitting(false);
   }
 

@@ -1,9 +1,6 @@
 
-import { AuthProvider } from '@/context/auth-provider';
 import { FuelCalculator } from '@/components/fuel-calculator';
-import { TripHistory } from '@/components/trip-history';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Separator } from '@/components/ui/separator';
 
 export default function Home() {
   return (
@@ -24,13 +21,9 @@ export default function Home() {
       </header>
       <main className="flex-1">
         <div className="container py-8 md:py-12">
-          <AuthProvider>
             <div className="mx-auto grid w-full max-w-lg gap-12">
               <FuelCalculator />
-              <Separator />
-              <TripHistory />
             </div>
-          </AuthProvider>
         </div>
       </main>
     </div>
