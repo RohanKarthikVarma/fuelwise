@@ -41,6 +41,7 @@ const tripSchema = z.object({
   efficiency: z.coerce.number().min(0.1, 'Efficiency must be > 0'),
   state: z.string().min(1, 'Please select a state'),
   fuelPrice: z.coerce.number().min(1, 'Fuel price must be > 0'),
+  people: z.coerce.number().int().min(1, 'At least 1 person').optional().default(1),
 });
 
 const dailySchema = z.object({
@@ -97,7 +98,7 @@ export function FuelCalculator() {
   
   const tripForm = useForm<TripFormValues>({
     resolver: zodResolver(tripSchema),
-    defaultValues: { distance: undefined, efficiency: undefined, state: '', fuelPrice: undefined },
+    defaultValues: { distance: undefined, efficiency: undefined, state: '', fuelPrice: undefined, people: 1 },
   });
 
   const dailyForm = useForm<DailyFormValues>({
@@ -127,16 +128,25 @@ export function FuelCalculator() {
     await new Promise(resolve => setTimeout(resolve, 300));
 
     if (activeTab === 'trip') {
-      const { distance, efficiency, fuelPrice } = values as TripFormValues;
+      const { distance, efficiency, fuelPrice, people } = values as TripFormValues;
       const totalFuel = distance / efficiency;
       const totalCost = totalFuel * fuelPrice;
+      const costPerPerson = totalCost / people;
+
+      const resultItems = [
+        { label: 'Total Fuel Needed', value: `${totalFuel.toFixed(2)} liters` },
+        { label: 'Estimated Trip Cost', value: `₹${totalCost.toFixed(2)}` },
+      ];
+
+      if (people > 1) {
+        resultItems.push({ label: 'Cost per Person', value: `₹${costPerPerson.toFixed(2)}` });
+      }
+
       setResult({
         title: 'Single Trip Estimate',
-        items: [
-          { label: 'Total Fuel Needed', value: `${totalFuel.toFixed(2)} liters` },
-          { label: 'Estimated Trip Cost', value: `₹${totalCost.toFixed(2)}` },
-        ],
+        items: resultItems,
       });
+
     } else if (activeTab === 'daily') {
       const { distance, efficiency, fuelPrice } = values as DailyFormValues;
       const totalFuel = distance / efficiency;
@@ -187,6 +197,7 @@ export function FuelCalculator() {
                   <FormField control={tripForm.control} name="distance" render={({ field }) => <FormItem><FormLabel>Trip Distance (km)</FormLabel><FormControl><Input type="number" placeholder="e.g., 350" {...field} /></FormControl><FormMessage /></FormItem>} />
                   <FormField control={tripForm.control} name="efficiency" render={({ field }) => <FormItem><FormLabel>Vehicle's Fuel Efficiency (km/l)</FormLabel><FormControl><Input type="number" placeholder="e.g., 18" {...field} /></FormControl><FormMessage /></FormItem>} />
                   <LocationFields form={tripForm} />
+                  <FormField control={tripForm.control} name="people" render={({ field }) => <FormItem><FormLabel>Split Among (people)</FormLabel><FormControl><Input type="number" min="1" step="1" placeholder="e.g., 2" {...field} /></FormControl><FormMessage /></FormItem>} />
                 </CardContent>
                 <CalculationFooter isSubmitting={isSubmitting} result={result} buttonText="Calculate Trip Cost" />
               </CalculatorCard>
@@ -291,3 +302,5 @@ const CalculationFooter = ({ isSubmitting, result, buttonText }: { isSubmitting:
         <ResultDisplay result={result} />
     </CardFooter>
 );
+
+    
